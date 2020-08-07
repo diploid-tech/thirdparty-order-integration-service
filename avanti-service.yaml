@@ -1,0 +1,34 @@
+main:
+  namespace: services
+  name: thirdparty-order-integration-service
+  description: |
+    A example service for integration orders via push model. It has an public endpoint (secured with basic authentication) for sending orders to which are send to the generic order service.
+
+    This service is an example of being a integration service, complying to the model of the external party system and then reconstruct it to the internal model which is used by the generic order service. Also has an example for a background processing job for sending orders to the order service.
+  deploymentType: Service
+  buildType: netcore
+  integration: push (OtherExternalSystem)
+  httpPort: 5000
+  clusterPort: 2552
+  team: platform
+  authorization:
+    requiredClaims:
+      azp: applications
+      aud: account
+    mappings:
+      x-avanti-customerId: context.customerId
+      x-avanti-email: email
+environments:
+  staging:
+    replicaCount: 1
+    cpuLimit: 75m
+    memoryLimit: 128Mi
+    vars:
+      AkkaSettings__AkkaClusterDiscoveryResolver: Kubernetes
+      AkkaSettings__MinNumberOfNodesInCluster: 1
+      AuthenticationSettings__BasicAuthenticationPassword: hksdflkjsaflkdkdljflaksdkl
+      Serilog__MinimumLevel__Default: Information
+      RelationalDataStoreSettings__DatabaseName: thirdparty-order-integration
+      ProcessorSettings__DelayProcessingOnStartInSeconds: 10
+      ServiceSettings__ExternalSystemName: SAPHAHA
+      ServiceSettings__OrderServiceUri: http://order-service:5000
