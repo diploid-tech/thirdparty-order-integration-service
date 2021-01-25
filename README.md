@@ -7,7 +7,7 @@ This service is an example of being a integration service, complying to the mode
 ## Prerequisites
 
 - Windows / Linux / MacOS
-- ASP.NET Core 3.1 Runtime
+- .NET 5 Runtime
 - PostgreSQL 12 or higher
 
 ## Installation
