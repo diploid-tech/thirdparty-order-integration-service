@@ -1,8 +1,6 @@
 using System;
 using System.Linq;
-using System.Threading.Tasks;
 using Akka.Actor;
-using Avanti.Core.Microservice.Web;
 using Avanti.ThirdPartyOrderIntegrationService.Order;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;

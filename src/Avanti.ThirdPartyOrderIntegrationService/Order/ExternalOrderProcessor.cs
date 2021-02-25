@@ -8,7 +8,6 @@ using Avanti.Core.Http;
 using Avanti.Core.Microservice;
 using Avanti.Core.Microservice.Actors;
 using Avanti.Core.Processor;
-using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 namespace Avanti.ThirdPartyOrderIntegrationService.Order
@@ -18,24 +17,21 @@ namespace Avanti.ThirdPartyOrderIntegrationService.Order
         private readonly IActorRef httpRequestActor;
         private readonly ServiceSettings serviceSettings;
         private readonly IMapper mapper;
-        private readonly ILogger logger;
 
         public ExternalOrderProcessor(
             IActorProvider<HttpRequestActor> httpRequestActorProvider,
             IOptions<ServiceSettings> serviceSettings,
-            IMapper mapper,
-            ILogger<ExternalOrderProcessor> logger)
+            IMapper mapper)
         {
             this.httpRequestActor = httpRequestActorProvider.Get();
             this.serviceSettings = serviceSettings.Value;
             this.mapper = mapper;
-            this.logger = logger;
         }
 
         public async Task<Result> Process(ExternalOrderQueueItem item)
         {
-            var orderServiceUri = this.serviceSettings.OrderServiceUri ?? new Uri("http://unknown/");
-            var result = await this.httpRequestActor.Ask(
+            Uri? orderServiceUri = this.serviceSettings.OrderServiceUri ?? new Uri("http://unknown/");
+            object? result = await this.httpRequestActor.Ask(
                 new HttpRequestActor.Post
                 {
                     ServiceUrl = orderServiceUri.Port == 443 ? $"https://{orderServiceUri.Host}" : $"http://{orderServiceUri.Host}:{orderServiceUri.Port}",
@@ -45,9 +41,9 @@ namespace Avanti.ThirdPartyOrderIntegrationService.Order
 
             return result switch
             {
-                HttpRequestActor.ReceivedSuccessServiceResponse _ => new Success(),
+                HttpRequestActor.ReceivedSuccessServiceResponse => new Success(),
                 HttpRequestActor.ReceivedNonSuccessServiceResponse r when r.StatusCode == HttpStatusCode.Conflict => new Success(),
-                HttpRequestActor.ReceivedNonSuccessServiceResponse _ => $"Remote service doesn't accept order {item.Id}".Failure(),
+                HttpRequestActor.ReceivedNonSuccessServiceResponse => $"Remote service doesn't accept order {item.Id}".Failure(),
                 _ => $"Could not send order to order service".Failure()
             };
         }

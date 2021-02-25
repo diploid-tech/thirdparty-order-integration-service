@@ -1,7 +1,3 @@
-using System.Data;
-using Npgsql;
-using NpgsqlTypes;
-
 namespace Avanti.ThirdPartyOrderIntegrationService.Order
 {
     public static class DataStoreStatements

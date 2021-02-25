@@ -7,7 +7,7 @@ using Akka.Actor;
 using Avanti.Core.EventStream;
 using Avanti.Core.RelationalData;
 using Avanti.ThirdPartyOrderIntegrationService.Order;
-using Avanti.ThirdPartyOrderIntegrationService.Order.Events;
+using Avanti.ThirdPartyOrderIntegrationService.Order.Models;
 using FluentAssertions;
 using Xunit;
 
@@ -17,7 +17,7 @@ namespace Avanti.ThirdPartyOrderIntegrationServiceTests.Order
     {
         public class When_Insert_External_Order_Is_Received : OrderActorSpec
         {
-            private OrderActor.InsertExternalOrder input = new OrderActor.InsertExternalOrder
+            private readonly OrderActor.InsertExternalOrder input = new()
             {
                 Id = "53419-01",
                 OrderDate = DateTimeOffset.Parse("2020-07-01T19:00:00Z", CultureInfo.InvariantCulture),
@@ -30,12 +30,12 @@ namespace Avanti.ThirdPartyOrderIntegrationServiceTests.Order
 
             public When_Insert_External_Order_Is_Received()
             {
-                this.progDatastoreActor.SetResponseForRequest<RelationalDataStoreActor.ExecuteScalar>(request =>
+                progDatastoreActor.SetResponseForRequest<RelationalDataStoreActor.ExecuteScalar>(request =>
                     request.SqlCommand == DataStoreStatements.GetOrderHashByExternalId ?
                         new RelationalDataStoreActor.ScalarResult(null) :
                         new RelationalDataStoreActor.ScalarResult(501));
 
-                this.progPlatformEventActor.SetResponseForRequest<PlatformEventActor.SendEvent>(request =>
+                progPlatformEventActor.SetResponseForRequest<PlatformEventActor.SendEvent>(request =>
                     new PlatformEventActor.EventSendSuccess());
             }
 
@@ -47,8 +47,8 @@ namespace Avanti.ThirdPartyOrderIntegrationServiceTests.Order
                     OrderDate = DateTimeOffset.Parse("2020-07-01T19:00:00Z", CultureInfo.InvariantCulture),
                     Lines = new[]
                     {
-                        new OrderDocument.OrderLine { ProductId = 5, Amount = 1 },
-                        new OrderDocument.OrderLine { ProductId = 7, Amount = 5 }
+                        new InternalOrder.OrderLine { ProductId = 5, Amount = 1 },
+                        new InternalOrder.OrderLine { ProductId = 7, Amount = 5 }
                     },
                     ExternalIdentifiers = new Dictionary<string, string>
                     {
@@ -64,7 +64,7 @@ namespace Avanti.ThirdPartyOrderIntegrationServiceTests.Order
                         Id = 501
                     });
 
-                this.progDatastoreActor.GetRequests<RelationalDataStoreActor.ExecuteScalar>()
+                progDatastoreActor.GetRequests<RelationalDataStoreActor.ExecuteScalar>()
                     .Should().BeEquivalentTo(new[]
                     {
                         new RelationalDataStoreActor.ExecuteScalar(
@@ -83,7 +83,7 @@ namespace Avanti.ThirdPartyOrderIntegrationServiceTests.Order
                             })
                     });
 
-                this.progPlatformEventActor.GetRequest<PlatformEventActor.SendEvent>().Should().BeEquivalentTo(
+                progPlatformEventActor.GetRequest<PlatformEventActor.SendEvent>().Should().BeEquivalentTo(
                     new PlatformEventActor.SendEvent(
                         new OrderInserted
                         {
@@ -95,7 +95,7 @@ namespace Avanti.ThirdPartyOrderIntegrationServiceTests.Order
             [Fact]
             public void Should_Return_Failure_When_Failed_To_Store()
             {
-                this.progDatastoreActor.SetResponseForRequest<RelationalDataStoreActor.ExecuteScalar>(request =>
+                progDatastoreActor.SetResponseForRequest<RelationalDataStoreActor.ExecuteScalar>(request =>
                     new RelationalDataStoreActor.ExecuteFailed());
 
                 Subject.Tell(input);
@@ -106,7 +106,7 @@ namespace Avanti.ThirdPartyOrderIntegrationServiceTests.Order
             [Fact]
             public void Should_Return_Failure_When_Failed_To_Send_Event()
             {
-                this.progPlatformEventActor.SetResponseForRequest<PlatformEventActor.SendEvent>(request =>
+                progPlatformEventActor.SetResponseForRequest<PlatformEventActor.SendEvent>(request =>
                     new PlatformEventActor.EventSendFailed());
 
                 Subject.Tell(input);

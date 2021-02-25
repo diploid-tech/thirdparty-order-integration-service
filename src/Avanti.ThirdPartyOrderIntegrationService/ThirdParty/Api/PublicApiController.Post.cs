@@ -19,11 +19,11 @@ namespace Avanti.ThirdPartyOrderIntegrationService.ThirdParty.Api
         [HttpPost]
         [BasicAuthorize]
         public async Task<IActionResult> PostOrder([FromBody] PostOrderRequest request) =>
-            await orderActorRef.Ask<OrderActor.IResponse>(
-                mapper.Map<OrderActor.InsertExternalOrder>(request)) switch
+            await this.orderActorRef.Ask<OrderActor.IResponse>(
+                this.mapper.Map<OrderActor.InsertExternalOrder>(request)) switch
             {
                 OrderActor.OrderReceived stored => new OkResult(),
-                OrderActor.OrderAlreadyProcessed _ => new OkResult(),
+                OrderActor.OrderAlreadyProcessed => new OkResult(),
                 _ => new StatusCodeResult(StatusCodes.Status500InternalServerError)
             };
     }

@@ -6,7 +6,6 @@ using System.Threading.Tasks;
 using Akka.Actor;
 using Akka.Event;
 using AutoMapper;
-using Avanti.Core.EventStream;
 using Avanti.Core.Microservice;
 using Avanti.Core.Processor;
 using Avanti.Core.RelationalData;
@@ -17,32 +16,28 @@ namespace Avanti.ThirdPartyOrderIntegrationService.Order
     {
         private readonly ILoggingAdapter log = Logging.GetLogger(Context);
         private readonly IRelationalDataStoreActorProvider relationalDataStoreActorProvider;
-        private readonly IPlatformEventActorProvider platformEventActorProvider;
         private readonly IMapper mapper;
         private readonly IClock clock;
-        private readonly IActorRef processorActor;
+        private IActorRef? processorActor;
 
         public OrderActor(
             IRelationalDataStoreActorProvider datastoreActorProvider,
-            IPlatformEventActorProvider platformEventActorProvider,
             IMapper mapper,
             IClock clock)
         {
             this.relationalDataStoreActorProvider = datastoreActorProvider;
-            this.platformEventActorProvider = platformEventActorProvider;
             this.mapper = mapper;
             this.clock = clock;
-            this.processorActor = GetSequentualProcessor();
 
-            ReceiveAsync<InsertExternalOrder>(m => Handle(m).PipeTo(Sender));
+            ReceiveAsync<InsertExternalOrder>(m => Handle(m).PipeTo(this.Sender));
         }
 
         private async Task<IResponse> Handle(InsertExternalOrder m)
         {
             this.log.Info($"Incoming request to queue third party order with external id '{m.Id}'");
 
-            var newHash = CalculateHash(m);
-            var existingOrder = await GetExistingOrderByExternalIdentifier(m.Id);
+            string newHash = CalculateHash(m);
+            Result<string>? existingOrder = await GetExistingOrderByExternalIdentifier(m.Id);
             switch (existingOrder)
             {
                 case IsSome<string> hash:
@@ -57,17 +52,18 @@ namespace Avanti.ThirdPartyOrderIntegrationService.Order
 
                     return new OrderAlreadyProcessed();
 
-                case IsFailure _:
+                case IsFailure:
                     this.log.Error($"Could not process order with external id '{m.Id}'");
                     return new OrderFailedToReceive();
             }
 
-            if (!(await this.processorActor.Ask(new SequentialProcessingActor.Queue<ExternalOrderProcessor.ExternalOrderQueueItem>(m.Id, this.mapper.Map<ExternalOrderProcessor.ExternalOrderQueueItem>(m))) is SequentialProcessingActor.Queued))
+            if (await this.processorActor.Ask(
+                new SequentialProcessingActor.Queue<ExternalOrderProcessor.ExternalOrderQueueItem>(m.Id, this.mapper.Map<ExternalOrderProcessor.ExternalOrderQueueItem>(m))) is not SequentialProcessingActor.Queued)
             {
                 return new OrderFailedToReceive();
             }
 
-            var result = await this.relationalDataStoreActorProvider.ExecuteCommand(
+            Result? result = await this.relationalDataStoreActorProvider.ExecuteCommand(
                 DataStoreStatements.InsertOrderHash,
                 new
                 {
@@ -76,30 +72,25 @@ namespace Avanti.ThirdPartyOrderIntegrationService.Order
                     Now = this.clock.Now()
                 });
 
-            switch (result)
+            return result switch
             {
-                case IsSuccess _:
-                    return new OrderReceived();
-
-                default:
-                    return new OrderFailedToReceive();
-            }
+                IsSuccess => new OrderReceived(),
+                _ => new OrderFailedToReceive(),
+            };
         }
 
         private static string CalculateHash(object input)
         {
-            var inputSerialized = JsonSerializer.Serialize(input);
-            using (var crypt = new SHA256Managed())
+            string inputSerialized = JsonSerializer.Serialize(input);
+            using var crypt = new SHA256Managed();
+            var hash = new StringBuilder();
+            byte[] crypto = crypt.ComputeHash(Encoding.UTF8.GetBytes(inputSerialized));
+            foreach (byte theByte in crypto)
             {
-                var hash = new System.Text.StringBuilder();
-                byte[] crypto = crypt.ComputeHash(Encoding.UTF8.GetBytes(inputSerialized));
-                foreach (byte theByte in crypto)
-                {
-                    hash.Append(theByte.ToString("x2", CultureInfo.InvariantCulture));
-                }
-
-                return hash.ToString();
+                hash.Append(theByte.ToString("x2", CultureInfo.InvariantCulture));
             }
+
+            return hash.ToString();
         }
 
         private async Task<Result<string>> GetExistingOrderByExternalIdentifier(string externalId) =>
@@ -110,6 +101,7 @@ namespace Avanti.ThirdPartyOrderIntegrationService.Order
                     ExternalId = externalId
                 });
 
+        protected override void PreStart() => this.processorActor = GetSequentualProcessor();
         protected virtual IActorRef GetSequentualProcessor() => Context.CreateSequentialProcessingActor<ExternalOrderProcessor.ExternalOrderQueueItem>("external-order-processing-actor");
     }
 }

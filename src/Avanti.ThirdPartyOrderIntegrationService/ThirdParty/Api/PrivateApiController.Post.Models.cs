@@ -1,7 +1,4 @@
-using System;
-using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
-using Avanti.Core.Microservice.Web;
 
 namespace Avanti.ThirdPartyOrderIntegrationService.ThirdParty.Api
 {

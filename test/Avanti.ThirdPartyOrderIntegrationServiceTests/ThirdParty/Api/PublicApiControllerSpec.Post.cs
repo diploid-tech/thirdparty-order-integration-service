@@ -13,7 +13,7 @@ namespace Avanti.ThirdPartyOrderIntegrationServiceTests.ThirdParty.Api
     {
         public class When_PostOrder_Request_Is_Received : PublicApiControllerSpec
         {
-            private PublicApiController.PostOrderRequest request = new PublicApiController.PostOrderRequest
+            private readonly PublicApiController.PostOrderRequest request = new()
             {
                 Id = "53419-01",
                 OrderDate = DateTimeOffset.Parse("2020-07-01T19:00:00Z", CultureInfo.InvariantCulture),
@@ -30,7 +30,7 @@ namespace Avanti.ThirdPartyOrderIntegrationServiceTests.ThirdParty.Api
                 progOrderActor.SetResponseForRequest<OrderActor.InsertExternalOrder>(request =>
                     new OrderActor.OrderReceived());
 
-                var result = await Subject.PostOrder(request);
+                IActionResult result = await Subject.PostOrder(request);
 
                 result.Should().BeOfType<OkResult>();
 
@@ -54,7 +54,7 @@ namespace Avanti.ThirdPartyOrderIntegrationServiceTests.ThirdParty.Api
                 progOrderActor.SetResponseForRequest<OrderActor.InsertExternalOrder>(request =>
                     new OrderActor.OrderFailedToReceive());
 
-                var result = await Subject.PostOrder(request);
+                IActionResult result = await Subject.PostOrder(request);
 
                 result.Should().BeOfType<StatusCodeResult>()
                     .Which.StatusCode.Should().Be(StatusCodes.Status500InternalServerError);
@@ -66,7 +66,7 @@ namespace Avanti.ThirdPartyOrderIntegrationServiceTests.ThirdParty.Api
                 progOrderActor.SetResponseForRequest<OrderActor.InsertExternalOrder>(request =>
                     new OrderActor.OrderAlreadyProcessed());
 
-                var result = await Subject.PostOrder(request);
+                IActionResult result = await Subject.PostOrder(request);
 
                 result.Should().BeOfType<OkResult>();
             }
