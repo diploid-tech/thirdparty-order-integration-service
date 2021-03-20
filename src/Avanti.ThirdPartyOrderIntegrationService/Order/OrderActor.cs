@@ -7,6 +7,7 @@ using Akka.Actor;
 using Akka.Event;
 using AutoMapper;
 using Avanti.Core.Microservice;
+using Avanti.Core.Microservice.Extensions;
 using Avanti.Core.Processor;
 using Avanti.Core.RelationalData;
 
@@ -29,7 +30,7 @@ namespace Avanti.ThirdPartyOrderIntegrationService.Order
             this.mapper = mapper;
             this.clock = clock;
 
-            ReceiveAsync<InsertExternalOrder>(m => Handle(m).PipeTo(this.Sender));
+            ReceiveAsync<InsertExternalOrder>(m => Handle(m).AsyncReplyTo(this.Sender));
         }
 
         private async Task<IResponse> Handle(InsertExternalOrder m)
