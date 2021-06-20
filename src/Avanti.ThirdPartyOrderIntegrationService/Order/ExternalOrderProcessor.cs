@@ -7,7 +7,7 @@ using AutoMapper;
 using Avanti.Core.Http;
 using Avanti.Core.Microservice;
 using Avanti.Core.Microservice.Actors;
-using Avanti.Core.Processor;
+using Avanti.Core.QueueProcessor;
 using Microsoft.Extensions.Options;
 
 namespace Avanti.ThirdPartyOrderIntegrationService.Order

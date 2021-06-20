@@ -33,6 +33,6 @@ environments:
       AuthenticationSettings__BasicAuthenticationPassword: hksdflkjsaflkdkdljflaksdkl
       Serilog__MinimumLevel__Default: Information
       RelationalDataStoreSettings__DatabaseName: thirdparty-order-integration
-      ProcessorSettings__DelayProcessingOnStartInSeconds: 10
+      QueueProcessor_StartProcessingBackoffAtStartingServiceInSeconds: 30
       ServiceSettings__ExternalSystemName: SAPHAHA
       ServiceSettings__OrderServiceUri: http://order-service:5000

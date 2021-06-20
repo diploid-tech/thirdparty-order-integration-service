@@ -8,7 +8,7 @@ using Akka.Event;
 using AutoMapper;
 using Avanti.Core.Microservice;
 using Avanti.Core.Microservice.Extensions;
-using Avanti.Core.Processor;
+using Avanti.Core.QueueProcessor;
 using Avanti.Core.RelationalData;
 
 namespace Avanti.ThirdPartyOrderIntegrationService.Order
@@ -59,7 +59,11 @@ namespace Avanti.ThirdPartyOrderIntegrationService.Order
             }
 
             if (await this.processorActor.Ask(
-                new SequentialProcessingActor.Queue<ExternalOrderProcessor.ExternalOrderQueueItem>(m.Id, this.mapper.Map<ExternalOrderProcessor.ExternalOrderQueueItem>(m))) is not SequentialProcessingActor.Queued)
+                new ProcessorParentActor.AddToQueue<ExternalOrderProcessor.ExternalOrderQueueItem>
+                {
+                    UniqueKey = m.Id,
+                    Item = this.mapper.Map<ExternalOrderProcessor.ExternalOrderQueueItem>(m)
+                }) is not ProcessorParentActor.Queued)
             {
                 return new OrderFailedToReceive();
             }
@@ -103,6 +107,10 @@ namespace Avanti.ThirdPartyOrderIntegrationService.Order
                 });
 
         protected override void PreStart() => this.processorActor = GetSequentualProcessor();
-        protected virtual IActorRef GetSequentualProcessor() => Context.CreateSequentialProcessingActor<ExternalOrderProcessor.ExternalOrderQueueItem>("external-order-processing-actor");
+
+        protected virtual IActorRef GetSequentualProcessor() => Context.CreateParallelWorkersQueueProcessor<ExternalOrderProcessor.ExternalOrderQueueItem>(
+            workersPerNode: 4,
+            maxNumberOfClusterWorkers: 40,
+            maxAttempts: 1);
     }
 }
