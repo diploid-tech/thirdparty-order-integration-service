@@ -87,7 +87,7 @@ namespace Avanti.ThirdPartyOrderIntegrationService.Order
         private static string CalculateHash(object input)
         {
             string inputSerialized = JsonSerializer.Serialize(input);
-            using var crypt = new SHA256Managed();
+            using var crypt = SHA512.Create();
             var hash = new StringBuilder();
             byte[] crypto = crypt.ComputeHash(Encoding.UTF8.GetBytes(inputSerialized));
             foreach (byte theByte in crypto)
