@@ -25,11 +25,11 @@
     </None>
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="Avanti.Core.EventStream.Azure" Version="2.0.0-alpha-gb09f5b6639" />
+    <PackageReference Include="Avanti.Core.EventStream.Azure" Version="2.0.0-alpha-g40faccec5c" />
     <PackageReference Include="Avanti.Core.KeyStore.Azure" Version="1.1.1-gb273be2f25" />
-    <PackageReference Include="Avanti.Core.Microservice" Version="2.0.0-alpha1-ga163740b1c" />
-    <PackageReference Include="Avanti.Core.Http" Version="1.1.1-gea915ac170" />
-    <PackageReference Include="Avanti.Core.QueueProcessor" Version="1.0.2-g094921e82e" />
-    <PackageReference Include="Avanti.Core.RelationalData.PostgreSQL" Version="1.3.1-gc46e46d11a" />
+    <PackageReference Include="Avanti.Core.Microservice" Version="2.0.0-alpha1-gc788a89f79" />
+    <PackageReference Include="Avanti.Core.Http" Version="2.0.0-alpha-g1d0db2e749" />
+    <PackageReference Include="Avanti.Core.QueueProcessor" Version="2.0.0-alpha-g68b99e3b03" />
+    <PackageReference Include="Avanti.Core.RelationalData.PostgreSQL" Version="2.0.0-alpha-g54fffa4302" />
   </ItemGroup>
 </Project>
