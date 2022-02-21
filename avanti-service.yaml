@@ -7,7 +7,7 @@ main:
 
     This service is an example of being a integration service, complying to the model of the external party system and then reconstruct it to the internal model which is used by the generic order service. Also has an example for a background processing job for sending orders to the order service.
   deploymentType: Service
-  buildType: netcore
+  buildType: dotnet
   integration: push (OtherExternalSystem)
   httpPort: 5000
   clusterPort: 2552
