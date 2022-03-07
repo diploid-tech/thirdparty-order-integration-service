@@ -9,5 +9,14 @@ namespace Avanti.ThirdPartyOrderIntegrationService.ThirdParty.Api
             [Required]
             public int? SimulateNumberOfOrders { get; set; }
         }
+
+        public class PostStressRequest
+        {
+            [Required]
+            public int? DurationInMinutes { get; set; }
+
+            [Required]
+            public int? IntervalInMilliseconds { get; set; }
+        }
     }
 }

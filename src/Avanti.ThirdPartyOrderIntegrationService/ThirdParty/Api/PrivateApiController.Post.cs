@@ -1,48 +1,39 @@
 using System;
-using System.Linq;
 using Akka.Actor;
-using Avanti.ThirdPartyOrderIntegrationService.Order;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
 using Swashbuckle.AspNetCore.Annotations;
 
 namespace Avanti.ThirdPartyOrderIntegrationService.ThirdParty.Api
 {
     public partial class PrivateApiController
     {
-        [SwaggerResponse(200, "The order is queued")]
-        [SwaggerResponse(400, "The order is invalid")]
+        [SwaggerResponse(200, "Operation is started")]
+        [SwaggerResponse(400, "Invalid parameters")]
         [SwaggerOperation(
-                    Summary = "Upsert an third party order",
-                    Description = "Inserts the third party order to be processed",
-                    Tags = new[] { "Order" })]
+                    Summary = "Start simulation of a number of generated orders",
+                    Description = "Start simulation of a number of generated orders",
+                    Tags = new[] { "Simulation" })]
         [HttpPost]
         public IActionResult PostSimulate([FromBody] PostSimulateRequest request)
         {
-            for (int idx = 0; idx < request.SimulateNumberOfOrders; idx++)
+            this.simulationActorRef.Tell(new SimulationActor.StartOnceSimulation { Number = request.SimulateNumberOfOrders!.Value });
+            return new OkResult();
+        }
+
+        [SwaggerResponse(200, "Operation is started")]
+        [SwaggerResponse(400, "Invalid parameters")]
+        [SwaggerOperation(
+                    Summary = "Start stress test",
+                    Description = "Start stress test",
+                    Tags = new[] { "Simulation" })]
+        [HttpPost("stresstest")]
+        public IActionResult PostStressTest([FromBody] PostStressRequest request)
+        {
+            this.simulationActorRef.Tell(new SimulationActor.StartStressSimuliation
             {
-                var externalOrder = new OrderActor.InsertExternalOrder
-                {
-                    Id = Guid.NewGuid().ToString(),
-                    OrderDate = this.clock.Now().AddDays(this.random.Next(0, 5) * -1),
-                    Products = Enumerable.Range(1, this.random.Next(1, 10)).Select(idx =>
-                        new
-                        {
-                            ProductId = this.random.Next(1, 100),
-                            Amount = this.random.Next(1, 10)
-                        })
-                        .GroupBy(l => l.ProductId)
-                        .Select(l => new OrderActor.InsertExternalOrder.Product
-                        {
-                            ProductId = l.Key,
-                            Amount = l.Sum(p => p.Amount)
-                        })
-                };
-
-                this.orderActorRef.Tell(externalOrder);
-            }
-
-            this.logger.LogInformation($"Done with simulating {request.SimulateNumberOfOrders} orders");
+                Duration = TimeSpan.FromMinutes(request.DurationInMinutes!.Value),
+                Interval = TimeSpan.FromMilliseconds(request.IntervalInMilliseconds!.Value)
+            });
             return new OkResult();
         }
     }
