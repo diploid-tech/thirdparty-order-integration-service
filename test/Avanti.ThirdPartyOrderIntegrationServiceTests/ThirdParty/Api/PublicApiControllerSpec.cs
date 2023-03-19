@@ -7,25 +7,24 @@ using Avanti.ThirdPartyOrderIntegrationService.ThirdParty.Api;
 using Microsoft.Extensions.Logging;
 using NSubstitute;
 
-namespace Avanti.ThirdPartyOrderIntegrationServiceTests.ThirdParty.Api
+namespace Avanti.ThirdPartyOrderIntegrationServiceTests.ThirdParty.Api;
+
+public partial class PublicApiControllerSpec : WithSubject<PublicApiController>
 {
-    public partial class PublicApiControllerSpec : WithSubject<PublicApiController>
+    private readonly ProgrammableActor<OrderActor> progOrderActor;
+
+    private PublicApiControllerSpec()
     {
-        private readonly ProgrammableActor<OrderActor> progOrderActor;
+        progOrderActor = Kit.CreateProgrammableActor<OrderActor>("order-actor");
+        IActorProvider<OrderActor> orderActorProvider = An<IActorProvider<OrderActor>>();
+        orderActorProvider.Get().Returns(progOrderActor.TestProbe);
 
-        private PublicApiControllerSpec()
-        {
-            progOrderActor = Kit.CreateProgrammableActor<OrderActor>("order-actor");
-            IActorProvider<OrderActor> orderActorProvider = An<IActorProvider<OrderActor>>();
-            orderActorProvider.Get().Returns(progOrderActor.TestProbe);
+        var config = new MapperConfiguration(cfg => cfg.AddProfile(new OrderMapping()));
+        config.AssertConfigurationIsValid();
 
-            var config = new MapperConfiguration(cfg => cfg.AddProfile(new OrderMapping()));
-            config.AssertConfigurationIsValid();
-
-            Subject = new PublicApiController(
-                orderActorProvider,
-                An<ILogger<PublicApiController>>(),
-                config.CreateMapper());
-        }
+        Subject = new PublicApiController(
+            orderActorProvider,
+            An<ILogger<PublicApiController>>(),
+            config.CreateMapper());
     }
 }

@@ -1,29 +1,26 @@
-using System;
-using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using Avanti.Core.Microservice.Web;
 
-namespace Avanti.ThirdPartyOrderIntegrationService.ThirdParty.Api
+namespace Avanti.ThirdPartyOrderIntegrationService.ThirdParty.Api;
+
+public partial class PublicApiController
 {
-    public partial class PublicApiController
+    public class PostOrderRequest
     {
-        public class PostOrderRequest
+        [Required]
+        public string Id { get; set; } = "unknown";
+
+        [Required]
+        public DateTimeOffset OrderDate { get; set; }
+
+        [Required]
+        [MustHaveElements]
+        public IEnumerable<Product> Products { get; set; } = Array.Empty<Product>();
+
+        public class Product
         {
-            [Required]
-            public string Id { get; set; } = "unknown";
-
-            [Required]
-            public DateTimeOffset OrderDate { get; set; }
-
-            [Required]
-            [MustHaveElements]
-            public IEnumerable<Product> Products { get; set; } = Array.Empty<Product>();
-
-            public class Product
-            {
-                public int ProductId { get; set; }
-                public int Amount { get; set; }
-            }
+            public int ProductId { get; set; }
+            public int Amount { get; set; }
         }
     }
 }
